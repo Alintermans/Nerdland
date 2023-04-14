@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Device Data</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  </head>
+  <body>
+    <div id="chart"></div>
+    
+    <script>
+      // Set up initial chart data
+      var data = [
+        {
+          x: [],
+          y: [],
+          type: 'line'
+        }
+      ];
+      
+      // Set up initial chart layout
+      var layout = {
+        title: 'Device Data',
+        xaxis: {
+          title: 'Time'
+        },
+        yaxis: {
+          title: 'Value'
+        }
+      };
+      
+      // Create the chart
+      var chart = Plotly.newPlot('chart', data, layout);
+      
+      // Connect to server-sent events (SSE)
+      var source = new EventSource('/stream');
+      
+      // Update the chart when new data arrives
+      source.onmessage = function(event) {
+        var data = JSON.parse(event.data);
+        
+        // Add new data to chart
+        Plotly.extendTraces('chart', {x: [[data.timestamp]], y: [[data.values]]}, [0]);
+      };
+    </script>
+  </body>
+</html>
