@@ -97,7 +97,6 @@ def sample_data():
                 #     current = 0
                 #     continue
                 temp_values[i].append(current)
-                #print(temp_values)
                 if len(temp_values[i]) == avg_sample_size:
                     averaged_value = mean(temp_values[i])
                     if len(values[i]) == max_len:
@@ -107,8 +106,7 @@ def sample_data():
                         svg_values[i] = values[i]
                     values[i].append(averaged_value*transform_value)
                     temp_values[i] = []
-                    #print(values[i])
-                    #control_car(i, averaged_value)
+                    control_car(i, averaged_value)
 
         
         # Sleep before taking the next sample
