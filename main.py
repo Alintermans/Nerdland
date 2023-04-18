@@ -1,9 +1,6 @@
 """
 main.py
 
-Part of InnovationLab.
-http://eng.kuleuven.be/innolab
-
 On Linux, if the system does not allow acces to the USB devices, you have
 to add the following line to /etc/udev/rules.d:
 SUBSYSTEM=="usb", ATTR{idVendor}=="2572", ATTR{idProduct}=="A001", MODE="666"
@@ -53,8 +50,6 @@ error_message = ""
 
 gpio_pins = [[1,2], [3,4], [5,6], [7,8]] # The left is mapped to the left button and right is mapped to the right button for the corresponding controller
 
-should_exit = False
-
 app = Flask(__name__)      
 
 
@@ -77,36 +72,32 @@ def sample_data():
     temp_values = [[], [], [], []]
 
     current = 0
-    
-    while not should_exit:
-        # Code to sample data from 4 devices
-        # and update device_data list
 
-        for i in range(0, number_of_endpoints):
-            if states[i] is not None:
-                current = random.randint(0, 1023)
-                # try: 
-                #     data = endpoints[i].read(64, 100)
-                #     ch2 = data[0]+data[1]*256 ## This is normally the second channel 
-                #     current = data[2]+data[3]*256 
-                #     if error_message == "Error reading data from endpoint " + str(i):
-                #         error_message = ""
-                # except: 
-                #     print("Error reading data from endpoint", i)
-                #     error_message = "Error reading data from endpoint " + str(i)
-                #     current = 0
-                #     continue
-                temp_values[i].append(current)
-                if len(temp_values[i]) == avg_sample_size:
-                    averaged_value = mean(temp_values[i])
-                    if len(values[i]) == max_len:
-                        values[i].pop(0)
-                    
-                    if len(values[i]) == number_of_svg_points:
-                        svg_values[i] = values[i]
-                    values[i].append(averaged_value*transform_value)
-                    temp_values[i] = []
-                    control_car(i, averaged_value)
+    for i in range(0, number_of_endpoints):
+        if states[i] is not None:
+            current = random.randint(0, 1023)
+            # try: 
+            #     data = endpoints[i].read(64, 100)
+            #     ch2 = data[0]+data[1]*256 ## This is normally the second channel 
+            #     current = data[2]+data[3]*256 
+            #     if error_message == "Error reading data from endpoint " + str(i):
+            #         error_message = ""
+            # except: 
+            #     print("Error reading data from endpoint", i)
+            #     error_message = "Error reading data from endpoint " + str(i)
+            #     current = 0
+            #     continue
+            temp_values[i].append(current)
+            if len(temp_values[i]) == avg_sample_size:
+                averaged_value = mean(temp_values[i])
+                if len(values[i]) == max_len:
+                    values[i].pop(0)
+                
+                if len(values[i]) == number_of_svg_points:
+                    svg_values[i] = values[i]
+                values[i].append(averaged_value*transform_value)
+                temp_values[i] = []
+                control_car(i, averaged_value)
 
         
         # Sleep before taking the next sample
@@ -116,7 +107,6 @@ def sample_data():
 ################################# Functions - Connecting the usb devices #############################################
 def connectToUSB():
     global endpoints
-    global should_exit
     global error_message
     global number_of_endpoints
     vendor_id = 0x2572
@@ -173,7 +163,6 @@ def connectToUSB():
     #         dev = usb.core.find(idVendor=0x2572, idProduct=0xA001)
     #     except usb.core.NoBackendError as exc:
     #         print("Cannot connect to USB")
-    #         should_exit = True
     #         return
         
     #     if dev.is_kernel_driver_active(0):
