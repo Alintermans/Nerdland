@@ -29,6 +29,8 @@ avg_sample_size = 10
 max_len = 200
 number_of_endpoints = 4
 
+transform_value = 5/1023
+
 number_of_svg_points = 50
 
 value_max_left = 400
@@ -82,7 +84,7 @@ def sample_data():
 
         for i in range(0, number_of_endpoints):
             if states[i] is not None:
-                current = random.randint(0, 1000)
+                current = random.randint(0, 1023)
                 # try: 
                 #     data = endpoints[i].read(64, 100)
                 #     ch2 = data[0]+data[1]*256 ## This is normally the second channel 
@@ -103,7 +105,7 @@ def sample_data():
                     
                     if len(values[i]) == number_of_svg_points:
                         svg_values[i] = values[i]
-                    values[i].append(averaged_value)
+                    values[i].append(averaged_value*transform_value)
                     temp_values[i] = []
                     #print(values[i])
                     #control_car(i, averaged_value)
@@ -270,23 +272,31 @@ def stop_button_pressed():
     button_index = int(request.args.get('value'))
     states[button_index] = None
     values[button_index] = []
+    svg_values[button_index] = []
 
     return jsonify({'message': 'Stop Button pressed!', 'value': button_index})
 
 @app.route('/download_svg_pressed')
 def download_svg_pressed():
     button_index = int(request.args.get('value'))
-    
-    # Download the SVG file
 
     return jsonify({'message': 'Download SVG Button pressed!', 'value': svg_values[button_index]})
+
+@app.route('/reset_usb_button_pressed')
+def reset_usb_button_pressed():
+    global error_message
+    error_message = "USB is being reset..."
+    time.sleep(1)
+    connectToUSB()
+
+    return jsonify({'message': 'Reset USB Button pressed!'})
 
 
 ################################# Main #############################################
 
 if __name__ == '__main__':
 
-    connectToUSB()
+    #connectToUSB()
     # Create and start the thread to sample data
     data_thread = threading.Thread(target=sample_data)
     data_thread.start()

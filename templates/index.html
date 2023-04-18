@@ -1,16 +1,30 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title>Four Quadrant Chart with Live Updates</title>
-	<script src="https://cdn.jsdelivr.net/npm/chart.js@3.5.1/dist/chart.min.js"></script>
-	<script src="https://d3js.org/d3.v7.min.js"></script>
+	<title>E.C.RC.C</title>
+	<link rel="icon" type="image/x-icon" href="{{url_for('static', filename='favicon.ico')}}">
+	<script src="{{url_for('static', filename='min_js/chart.min.js')}}"></script>
+	<script src="{{url_for('static', filename='min_js/d3.v7.min.js')}}"></script>
+	
+	<link rel="stylesheet" href="{{url_for('static', filename='min_css/font_awesome_all.min.css')}}" />
 	<style>
 		.container {
 			display: grid;
 			grid-template-columns: repeat(2, 1fr);
 			grid-template-rows: repeat(2, 1fr);
 			grid-gap: 20px;
-			height: 50vh;
+			/* height: 100vh; */
+			width: 118vh;
+			margin: 0 auto;
+		}
+
+		.header h1, .header button {
+			display: inline-block;
+  			vertical-align: middle; /* Optional: align elements vertically */
+		}
+
+		.header {
+			text-align: center;
 		}
 
 		.chart-container {
@@ -22,25 +36,56 @@
 			border: 1px solid #ccc;
 		}
 
-		h1, h2 {
+		h1, h2, h3 {
 			text-align: center;
 			margin: 0;
 			margin-bottom: 10px;
+			font-family: "Montserrat", sans-serif;
 		}
 
-		button {
-			margin: 10px;
-			padding: 5px 10px;
-			border: none;
-			border-radius: 5px;
-			background-color: #007bff;
-			color: #fff;
-			cursor: pointer;
-			transition: background-color 0.3s ease;
+		.button {
+		margin: 10px;
+		padding: 5px 10px;
+		border: none;
+		border-radius: 5px;
+		color: #fff;
+		cursor: pointer;
+		transition: background-color 0.3s ease;
 		}
 
-		button:hover {
-			background-color: #0062cc;
+		.button-usb {
+			background-color: #95a5ab;
+			margin-bottom: 15px;
+		}
+
+		.button-usb-in-errorbox {
+			background-color: #fff;
+			color: #841c1c;
+		}
+
+		.button:hover {
+		opacity: 0.8;
+		}
+
+		.button i {
+		margin-right: 5px;
+		}
+
+		.button-start {
+		background-color: #28a745;
+		}
+
+		.button-stop {
+		background-color: #dc3545;
+		}
+
+		.button-download {
+		background-color: #007bff;
+		}
+
+		.button:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
 		}
 
 		charts {
@@ -62,49 +107,55 @@
 </head>
 <body>
 	<div id="error-container"></div>
+	<div class="header">
+		<h1>Eye Controlled RC-Cars</h1> 
+		<button class="button button-usb" onclick="reset_usb_button()"><i class="fas fa-undo"></i> Reset USB</button>
+	</div>
 	<div class="container">
 		<div class="chart-container">
-			<h1>Car 1</h1>
-			<h2 id="subtitle_1"></h2>
+			<h2>Car 1</h2>
+			<h3 id="subtitle_1"></h3>
 			<canvas id="chart1" class="charts"></canvas>
 			<div>
-				<button id="btn1" onclick="start_button(0)">Start</button>
-				<button id="btn2" onclick="stop_button(0)">Stop</button>
-				<button id="btn3"  onclick="download_svg_button(0)">Download SVG</button>
+				<button onclick="start_button(0)" class="button button-start"><i class="fas fa-play"></i> Start</button>
+				<button onclick="stop_button(0)" class="button button-stop"><i class="fas fa-stop"></i> Stop</button>
+				<button onclick="download_svg_button(0)" class="button button-download"><i class="fas fa-download"></i> Download SVG</button>
 			</div>
 		</div>
 		<div class="chart-container">
-			<h1>Car 2</h1>
-			<h2 id="subtitle_2"></h2>
+			<h2>Car 2</h2>
+			<h3 id="subtitle_2"></h3>
 			<canvas id="chart2" class="charts" ></canvas>
 			<div>
-				<button id="btn4" onclick="start_button(1)">Start</button>
-				<button id="btn5" onclick="stop_button(1)">Stop</button>
-				<button id="btn6" onclick="download_svg_button(1)">Download SVG</button>
+				<button onclick="start_button(1)" class="button button-start"><i class="fas fa-play"></i> Start</button>
+				<button onclick="stop_button(1)" class="button button-stop"><i class="fas fa-stop"></i> Stop</button>
+				<button onclick="download_svg_button(1)" class="button button-download"><i class="fas fa-download"></i> Download SVG</button>
 			</div>
 		</div>
 		<div class="chart-container">
-			<h1>Car 3</h1>
-			<h2 id="subtitle_3"></h2>
+			<h2>Car 3</h2>
+			<h3 id="subtitle_3"></h3>
 			<canvas id="chart3" class="charts"></canvas>
 			<div>
-				<button id="btn7" onclick="start_button(2)">Start</button>
-				<button id="btn8" onclick="stop_button(2)">Stop</button>
-				<button id="btn9" onclick="download_svg_button(2)">Download SVG</button>
+				<button onclick="start_button(2)" class="button button-start"><i class="fas fa-play"></i> Start</button>
+				<button onclick="stop_button(2)" class="button button-stop"><i class="fas fa-stop"></i> Stop</button>
+				<button onclick="download_svg_button(2)" class="button button-download"><i class="fas fa-download"></i> Download SVG</button>
 			</div>
 		</div>
 		<div class="chart-container">
-			<h1>Car 4</h1>
-			<h2 id="subtitle_4"></h2>
+			<h2>Car 4</h2>
+			<h3 id="subtitle_4"></h3>
 			<canvas id="chart4" class="charts"></canvas>
 			<div>
-				<button id="btn10" onclick="start_button(3)">Start</button>
-				<button id="btn11" onclick="stop_button(3)">Stop</button>
-				<button id="btn12" onclick="download_svg_button(3)">Download SVG</button>
+				<button onclick="start_button(3)" class="button button-start"><i class="fas fa-play"></i> Start</button>
+				<button onclick="stop_button(3)" class="button button-stop"><i class="fas fa-stop"></i> Stop</button>
+				<button onclick="download_svg_button(3)" class="button button-download"><i class="fas fa-download"></i> Download SVG</button>
 				
 			</div>
 		</div>
+		
 	</div>
+	
 
 	<script>
 				// Initialize the charts
@@ -129,6 +180,56 @@
 			chart4.data.datasets[0].data = data.value_4;
 			chart4.data.labels = [...Array(data.value_4.length).keys()];
 			chart4.update();
+
+			if (data.value_1.length > 0) {
+				if (data.value_1[data.value_1.length - 1] >= 3) {
+					document.getElementById('subtitle_1').innerHTML = '<i class="fas fa-arrow-right"></i>';
+				} else if (data.value_1[data.value_1.length - 1] <= 2) {
+					document.getElementById('subtitle_1').innerHTML = '<i class="fas fa-arrow-left"></i>';
+				} else {
+					document.getElementById('subtitle_1').innerHTML = '<i class="fas fa-arrow-up"></i>';
+				}
+			} else {
+				document.getElementById('subtitle_1').innerHTML = 'Stopped';
+			}
+
+			if (data.value_2.length > 0) {
+				if (data.value_2[data.value_2.length - 1] >= 3) {
+					document.getElementById('subtitle_2').innerHTML = '<i class="fas fa-arrow-right"></i>';
+				} else if (data.value_2[data.value_2.length - 1] <= 2) {
+					document.getElementById('subtitle_2').innerHTML = '<i class="fas fa-arrow-left"></i>';
+				} else {
+					document.getElementById('subtitle_2').innerHTML = '<i class="fas fa-arrow-up"></i>';
+				}
+			} else {
+				document.getElementById('subtitle_2').innerHTML = 'Stopped';
+			}
+
+			if (data.value_3.length > 0) {
+				if (data.value_3[data.value_3.length - 1] >= 3) {
+					document.getElementById('subtitle_3').innerHTML = '<i class="fas fa-arrow-right"></i>';
+				} else if (data.value_3[data.value_3.length - 1] <= 2) {
+					document.getElementById('subtitle_3').innerHTML = '<i class="fas fa-arrow-left"></i>';
+				} else {
+					document.getElementById('subtitle_3').innerHTML = '<i class="fas fa-arrow-up"></i>';
+				}
+			} else {
+				document.getElementById('subtitle_3').innerHTML = 'Stopped';
+			}
+
+			if (data.value_4.length > 0) {
+				if (data.value_4[data.value_4.length - 1] >= 3) {
+					document.getElementById('subtitle_4').innerHTML = '<i class="fas fa-arrow-right"></i>';
+				} else if (data.value_4[data.value_4.length - 1] <= 2) {
+					document.getElementById('subtitle_4').innerHTML = '<i class="fas fa-arrow-left"></i>';
+				} else {
+					document.getElementById('subtitle_4').innerHTML = '<i class="fas fa-arrow-up"></i>';
+				}
+			} else {
+				document.getElementById('subtitle_4').innerHTML = 'Stopped';
+			}
+
+			
 		};
 
 		// Helper function to create a new line chart
@@ -140,7 +241,7 @@
 				labels: ['1', '2', '3', '4', '5', '6'],
 				datasets: [{
 					label: title,
-					data: [12, 19, 3, 5, 2, 3],
+					data: [0, 1, 5, 3, 2, 3],
 					borderWidth: 1,
 					borderColor: color,
 					fill: false
@@ -165,7 +266,7 @@
 								beginAtZero: true
 							},
 							min: 0,
-							max: 1024
+							max: 5
 						}
 					},
 					layout: {
@@ -185,6 +286,11 @@
 			return chart;
 		}
 
+		function reset_usb_button() {
+			fetch('/reset_usb_button_pressed')
+			.then(response => response.json())
+			.then(data => console.log(data));}
+
 
 		function start_button(val) {
 			fetch(`/start_button_pressed?value=${val}`)
@@ -199,6 +305,10 @@
 		}
 
 		function generate_and_download_svg_file(data) {
+			if (data.length === 0) {
+				alert('SVG not ready yet, wait a few seconds and try again');
+				return;
+			}
 			const width = 500;
 			const height = 300;
 			const margin = 20;
@@ -249,7 +359,7 @@
 		function showErrorMessage(msg) {
 			error_box_visible = true;
 			var errorContainer = document.getElementById("error-container");
-			errorContainer.innerHTML = "<div class='error-box'>" + msg + "</div>";
+			errorContainer.innerHTML = "<div class='error-box'>" + msg + " <button class='button button-usb-in-errorbox' onclick='reset_usb_button()'><i class='fas fa-undo'></i> Reset USB</button></div>";
 		}
 
 		function hideErrorMessage() {
