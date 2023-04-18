@@ -17,10 +17,11 @@ import random
 import usb
 import usb.core
 import usb.util
+import copy 
 
 ################################# Settings #############################################
-sample_period = 0.005
-send_period = 0.250
+sample_period = 0.001
+send_period = 0.200
 error_send_period = 2
 avg_sample_size = 10
 max_len = 200
@@ -72,36 +73,36 @@ def sample_data():
     temp_values = [[], [], [], []]
 
     current = 0
+    while True:
+        for i in range(0, number_of_endpoints):
+            if states[i] is not None:
+                current = random.randint(0, 1023)
+                try: 
+                    data = endpoints[i].read(64, 100)
+                    ch2 = data[0]+data[1]*256 ## This is normally the second channel 
+                    current = data[2]+data[3]*256 
+                    if error_message == "Error reading data from endpoint " + str(i):
+                        error_message = ""
+                except: 
+                    print("Error reading data from endpoint", i)
+                    error_message = "Error reading data from endpoint " + str(i)
+                    current = 0
+                    continue
+                temp_values[i].append(current)
+                if len(temp_values[i]) == avg_sample_size:
+                    averaged_value = mean(temp_values[i])
+                    if len(values[i]) == max_len:
+                        values[i].pop(0)
+                    
+                    if len(values[i]) == number_of_svg_points:
+                        svg_values[i] = copy.deepcopy(values[i])
+                    values[i].append(averaged_value*transform_value)
+                    temp_values[i] = []
+                    control_car(i, averaged_value)
 
-    for i in range(0, number_of_endpoints):
-        if states[i] is not None:
-            current = random.randint(0, 1023)
-            # try: 
-            #     data = endpoints[i].read(64, 100)
-            #     ch2 = data[0]+data[1]*256 ## This is normally the second channel 
-            #     current = data[2]+data[3]*256 
-            #     if error_message == "Error reading data from endpoint " + str(i):
-            #         error_message = ""
-            # except: 
-            #     print("Error reading data from endpoint", i)
-            #     error_message = "Error reading data from endpoint " + str(i)
-            #     current = 0
-            #     continue
-            temp_values[i].append(current)
-            if len(temp_values[i]) == avg_sample_size:
-                averaged_value = mean(temp_values[i])
-                if len(values[i]) == max_len:
-                    values[i].pop(0)
-                
-                if len(values[i]) == number_of_svg_points:
-                    svg_values[i] = values[i]
-                values[i].append(averaged_value*transform_value)
-                temp_values[i] = []
-                control_car(i, averaged_value)
-
-        
-        # Sleep before taking the next sample
-        time.sleep(sample_period)
+            
+            # Sleep before taking the next sample
+            time.sleep(sample_period)
         
 
 ################################# Functions - Connecting the usb devices #############################################
@@ -213,7 +214,7 @@ def control_car(index, new_value):
 
 # Thread function to run Flask web server
 def run_server():
-    app.run(port=3000)
+    app.run(host='0.0.0.0', port=3000)
 
 # Flask route to display device data
 @app.route('/')
@@ -283,7 +284,7 @@ def reset_usb_button_pressed():
 
 if __name__ == '__main__':
 
-    #connectToUSB()
+    connectToUSB()
     # Create and start the thread to sample data
     data_thread = threading.Thread(target=sample_data)
     data_thread.start()
