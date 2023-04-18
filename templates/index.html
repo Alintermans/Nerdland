@@ -3,13 +3,14 @@
 <head>
 	<title>Four Quadrant Chart with Live Updates</title>
 	<script src="https://cdn.jsdelivr.net/npm/chart.js@3.5.1/dist/chart.min.js"></script>
+	<script src="https://d3js.org/d3.v7.min.js"></script>
 	<style>
 		.container {
 			display: grid;
 			grid-template-columns: repeat(2, 1fr);
 			grid-template-rows: repeat(2, 1fr);
 			grid-gap: 20px;
-			height: 100vh;
+			height: 50vh;
 		}
 
 		.chart-container {
@@ -45,58 +46,72 @@
 		charts {
 			position: relative; height:40vh; width:80vw
 		}
+
+		.error-box {
+			position: fixed;
+			top: 40px;
+			left: 50%;
+			transform: translate(-50%, -50%);
+			padding: 20px;
+			background-color: #ff3333;
+			color: white;
+			border-radius: 5px;
+			z-index: 9999;
+		}
 	</style>
 </head>
 <body>
+	<div id="error-container"></div>
 	<div class="container">
 		<div class="chart-container">
-			<h1>Chart 1</h1>
-			<h2>Subtitle 1</h2>
+			<h1>Car 1</h1>
+			<h2 id="subtitle_1"></h2>
 			<canvas id="chart1" class="charts"></canvas>
 			<div>
-				<button id="btn1">Button 1</button>
-				<button id="btn2">Button 2</button>
-				<button id="btn3">Button 3</button>
+				<button id="btn1" onclick="start_button(0)">Start</button>
+				<button id="btn2" onclick="stop_button(0)">Stop</button>
+				<button id="btn3"  onclick="download_svg_button(0)">Download SVG</button>
 			</div>
 		</div>
 		<div class="chart-container">
-			<h1>Chart 2</h1>
-			<h2>Subtitle 2</h2>
+			<h1>Car 2</h1>
+			<h2 id="subtitle_2"></h2>
 			<canvas id="chart2" class="charts" ></canvas>
 			<div>
-				<button id="btn4">Button 4</button>
-				<button id="btn5">Button 5</button>
-				<button id="btn6">Button 6</button>
+				<button id="btn4" onclick="start_button(1)">Start</button>
+				<button id="btn5" onclick="stop_button(1)">Stop</button>
+				<button id="btn6" onclick="download_svg_button(1)">Download SVG</button>
 			</div>
 		</div>
 		<div class="chart-container">
-			<h1>Chart 3</h1>
-			<h2>Subtitle 3</h2>
+			<h1>Car 3</h1>
+			<h2 id="subtitle_3"></h2>
 			<canvas id="chart3" class="charts"></canvas>
 			<div>
-				<button id="btn7">Button 7</button>
-				<button id="btn8">Button 8</button>
-				<button id="btn9">Button 9</button>
+				<button id="btn7" onclick="start_button(2)">Start</button>
+				<button id="btn8" onclick="stop_button(2)">Stop</button>
+				<button id="btn9" onclick="download_svg_button(2)">Download SVG</button>
 			</div>
 		</div>
 		<div class="chart-container">
-			<h1>Chart 4</h1>
-			<h2>Subtitle 4</h2>
+			<h1>Car 4</h1>
+			<h2 id="subtitle_4"></h2>
 			<canvas id="chart4" class="charts"></canvas>
 			<div>
-				<button id="btn10">Button 10</button>
-				<button id="btn11">Button 11</button>
-				<button id="btn12">Button 12</button>
+				<button id="btn10" onclick="start_button(3)">Start</button>
+				<button id="btn11" onclick="stop_button(3)">Stop</button>
+				<button id="btn12" onclick="download_svg_button(3)">Download SVG</button>
+				
 			</div>
 		</div>
 	</div>
 
 	<script>
 				// Initialize the charts
-                var chart1 = createChart('chart1', 'Chart 1', '#007bff');
-		var chart2 = createChart('chart2', 'Chart 2', '#dc3545');
-		var chart3 = createChart('chart3', 'Chart 3', '#ffc107');
-		var chart4 = createChart('chart4', 'Chart 4', '#28a745');
+                var chart1 = createChart('chart1', 'Car 1', '#007bff');
+		var chart2 = createChart('chart2', 'Car 2', '#dc3545');
+		var chart3 = createChart('chart3', 'Car 3', '#ffc107');
+		var chart4 = createChart('chart4', 'Car 4', '#28a745');
 
 		// Connect to the EventSource and update the charts with new data
 		var source = new EventSource('/stream');
@@ -169,6 +184,92 @@
 			});
 			return chart;
 		}
+
+
+		function start_button(val) {
+			fetch(`/start_button_pressed?value=${val}`)
+			.then(response => response.json())
+			.then(data => console.log(data));
+		}
+
+		function stop_button(val) {
+			fetch(`/stop_button_pressed?value=${val}`)
+			.then(response => response.json())
+			.then(data => console.log(data));
+		}
+
+		function generate_and_download_svg_file(data) {
+			const width = 500;
+			const height = 300;
+			const margin = 20;
+
+			const xScale = d3.scaleLinear()
+				.domain([0, data.length - 1])
+				.range([margin, width - margin]);
+
+			const yScale = d3.scaleLinear()
+				.domain([0, d3.max(data)])
+				.range([height - margin, margin]);
+
+			const line = d3.line()
+				.x((d, i) => xScale(i))
+				.y(d => yScale(d))
+				.curve(d3.curveMonotoneX);
+
+			const svg = d3.create("svg")
+				.attr("viewBox", `0 0 ${width} ${height}`);
+
+			svg.append("path")
+				.datum(data)
+				.attr("fill", "none")
+				.attr("stroke", "steelblue")
+				.attr("stroke-width", 1.5)
+				.attr("d", line);
+			
+				const svgString = new XMLSerializer().serializeToString(svg.node());
+				const blob = new Blob([svgString], {type: "image/svg+xml"});
+				const url = URL.createObjectURL(blob);
+				const link = document.createElement("a");
+				link.download = "graph.svg";
+				link.href = url;
+				document.body.appendChild(link);
+				link.click();
+				document.body.removeChild(link);
+				URL.revokeObjectURL(url);
+		}
+		
+		function download_svg_button(val) {
+			fetch(`/download_svg_pressed?value=${val}`)
+			.then(response => response.json())
+			.then(data => generate_and_download_svg_file(data.value));
+		}
+
+		var error_box_visible = false;
+
+		function showErrorMessage(msg) {
+			error_box_visible = true;
+			var errorContainer = document.getElementById("error-container");
+			errorContainer.innerHTML = "<div class='error-box'>" + msg + "</div>";
+		}
+
+		function hideErrorMessage() {
+			error_box_visible = false;
+			var errorContainer = document.getElementById("error-container");
+			errorContainer.innerHTML = "";
+		}
+
+		var error_source = new EventSource('/error_stream');
+		error_source.onmessage = function(event) {
+			var data = JSON.parse(event.data);
+			if (data.message != "") {
+				showErrorMessage(data.message);
+			} else if (error_box_visible) {
+				hideErrorMessage();
+			}
+		};
+
+		
+
 	</script>
 
   </body>
