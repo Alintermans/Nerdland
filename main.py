@@ -18,12 +18,14 @@ import usb
 import usb.core
 import usb.util
 import copy 
+import RPi.GPIO as GPIO
+
 
 ################################# Settings #############################################
 sample_period = 0.001
 send_period = 0.200
 error_send_period = 2
-avg_sample_size = 10
+avg_sample_size = 20
 max_len = 200
 number_of_endpoints = 4
 
@@ -49,7 +51,7 @@ svg_values = [[], [], [], []]
 #Error message
 error_message = ""
 
-gpio_pins = [[1,2], [3,4], [5,6], [7,8]] # The left is mapped to the left button and right is mapped to the right button for the corresponding controller
+gpio_pins = [[19,26], [13,6], [21,20], [16,12]] # The left is mapped to the left button and right is mapped to the right button for the corresponding controller
 
 app = Flask(__name__)      
 
@@ -186,6 +188,17 @@ def connectToUSB():
 
 
 ################################# Functions - Controlling the cars #############################################
+def setup_gpio_pins():
+    GPIO.setmode(GPIO.BCM) 
+    for left, right in gpio_pins:
+        print(left)
+        print(right)
+        GPIO.setup(left, GPIO.OUT)
+        GPIO.setup(right, GPIO.OUT)
+        GPIO.output(left, GPIO.LOW)
+        GPIO.output(right, GPIO.LOW)
+    
+
 def control_car(index, new_value):
     global states
 
@@ -194,11 +207,13 @@ def control_car(index, new_value):
             states[index] = 'RIGHT'
             gpio_pin = gpio_pins[index][1]
             # Set the GPIO PIN TO HIGH
+            GPIO.output(gpio_pin, GPIO.HIGH)
     elif new_value <= value_max_left:
         if states[index] != 'LEFT':
             states[index] = 'LEFT'
             gpio_pin = gpio_pins[index][0]
             # Set the GPIO PIN TO HIGH
+            GPIO.output(gpio_pin, GPIO.HIGH)
     else:
         previous_state = states[index]
         states[index] = 'CENTER'
@@ -206,9 +221,11 @@ def control_car(index, new_value):
         if previous_state == 'LEFT':
             gpio_pin = gpio_pins[index][0]
             # Set the GPIO PIN TO LOW
+            GPIO.output(gpio_pin, GPIO.LOW)
         elif previous_state == 'RIGHT':
             gpio_pin = gpio_pins[index][1]
             # Set the GPIO PIN TO LOW
+            GPIO.output(gpio_pin, GPIO.LOW)
 
 ################################# Functions - Flask Server #############################################
 
@@ -261,6 +278,9 @@ def stop_button_pressed():
     states[button_index] = None
     values[button_index] = []
     svg_values[button_index] = []
+    left, right = gpio_pins[button_index]
+    GPIO.output(left, GPIO.LOW)
+    GPIO.output(right, GPIO.LOW)
 
     return jsonify({'message': 'Stop Button pressed!', 'value': button_index})
 
@@ -283,8 +303,12 @@ def reset_usb_button_pressed():
 ################################# Main #############################################
 
 if __name__ == '__main__':
-
+    # Setup GPIO pins
+    GPIO.setwarnings(False)
+    setup_gpio_pins()
+    time.sleep(1)
     connectToUSB()
+    time.sleep(1)
     # Create and start the thread to sample data
     data_thread = threading.Thread(target=sample_data)
     data_thread.start()
