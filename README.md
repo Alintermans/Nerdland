@@ -15,7 +15,7 @@ The Raspberry pi hosts the sever on which everything runs to controll the RC Car
 ## Getting Started
 First make sure all requirements are met and all cables are plugged into the right place. 
 
-Then go to terminal connect to raspberry pi via ssh (i.e. ssh pi@raspberry.local with the password: Raspberry). You can start the web application by first going to ~/Desktop/Nerdland and starting the webapplication by calling the command $sudo python3 main.py.
+Then go to terminal connect to raspberry pi via ssh (i.e. ssh pi@raspberrypi.local with the password: raspberry). You can start the web application by first going to ~/Desktop/Nerdland and starting the webapplication by calling the command $sudo python3 main.py.
 
 Afterwards you can connect to the webappication by going to the web browser and opening the raspberry.local website. When you're connected, you can start using the whole setup and start controlling the car by pressing on the Start button and waiting for it to be calibrated to use it correctly. 
 

@@ -34,11 +34,11 @@ transform_value = 5/1023
 
 number_of_svg_points = 50
 
-value_max_left = 2
-value_min_right = 3
+value_max_left = 2.2
+value_min_right = 2.8
 
-calibration_min = 2.2
-calibration_max = 2.8
+calibration_min = 2.3
+calibration_max = 2.7
 
 
 ################################# Global Variables #############################################
