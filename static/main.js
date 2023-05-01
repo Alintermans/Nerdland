@@ -34,48 +34,60 @@ source.onmessage = function(event) {
     chart4.update();
 
     if (data.value_1.length > 0) {
-        if (data.value_1[data.value_1.length - 1] >= min_right_threshold) {
+        state = data.state_1
+        if (state === 'RIGHT') {
             document.getElementById('subtitle_1').innerHTML = '<i class="fas fa-arrow-right"></i>';
-        } else if (data.value_1[data.value_1.length - 1] <= max_left_threshold) {
+        } else if (state === 'LEFT' ) {
             document.getElementById('subtitle_1').innerHTML = '<i class="fas fa-arrow-left"></i>';
-        } else {
+        } else if (state === 'CENTER') {
             document.getElementById('subtitle_1').innerHTML = '<i class="fas fa-arrow-up"></i>';
+        } else if (state === 'CALIBRATING') {
+            document.getElementById('subtitle_1').innerHTML = 'CALIBRATING, Please keep your head straight!';
         }
     } else {
         document.getElementById('subtitle_1').innerHTML = 'Stopped';
     }
 
     if (data.value_2.length > 0) {
-        if (data.value_2[data.value_2.length - 1] >= min_right_threshold) {
+        state = data.state_2
+        if (state === 'RIGHT') {
             document.getElementById('subtitle_2').innerHTML = '<i class="fas fa-arrow-right"></i>';
-        } else if (data.value_2[data.value_2.length - 1] <= max_left_threshold) {
+        } else if (state === 'LEFT' ) {
             document.getElementById('subtitle_2').innerHTML = '<i class="fas fa-arrow-left"></i>';
-        } else {
+        } else if (state === 'CENTER') {
             document.getElementById('subtitle_2').innerHTML = '<i class="fas fa-arrow-up"></i>';
+        } else if (state === 'CALIBRATING') {
+            document.getElementById('subtitle_2').innerHTML = 'CALIBRATING, Please keep your head straight!';
         }
     } else {
         document.getElementById('subtitle_2').innerHTML = 'Stopped';
     }
 
     if (data.value_3.length > 0) {
-        if (data.value_3[data.value_3.length - 1] >= min_right_threshold) {
+        state = data.state_3
+        if (state === 'RIGHT') {
             document.getElementById('subtitle_3').innerHTML = '<i class="fas fa-arrow-right"></i>';
-        } else if (data.value_3[data.value_3.length - 1] <= max_left_threshold) {
+        } else if (state === 'LEFT' ) {
             document.getElementById('subtitle_3').innerHTML = '<i class="fas fa-arrow-left"></i>';
-        } else {
+        } else if (state === 'CENTER') {
             document.getElementById('subtitle_3').innerHTML = '<i class="fas fa-arrow-up"></i>';
+        } else if (state === 'CALIBRATING') {
+            document.getElementById('subtitle_3').innerHTML = 'CALIBRATING, Please keep your head straight!';
         }
     } else {
         document.getElementById('subtitle_3').innerHTML = 'Stopped';
     }
 
     if (data.value_4.length > 0) {
-        if (data.value_4[data.value_4.length - 1] >= min_right_threshold) {
+        state = data.state_4
+        if (state === 'RIGHT') {
             document.getElementById('subtitle_4').innerHTML = '<i class="fas fa-arrow-right"></i>';
-        } else if (data.value_4[data.value_4.length - 1] <= max_left_threshold) {
+        } else if (state === 'LEFT' ) {
             document.getElementById('subtitle_4').innerHTML = '<i class="fas fa-arrow-left"></i>';
-        } else {
+        } else if (state === 'CENTER') {
             document.getElementById('subtitle_4').innerHTML = '<i class="fas fa-arrow-up"></i>';
+        } else if (state === 'CALIBRATING') {
+            document.getElementById('subtitle_4').innerHTML = 'CALIBRATING, Please keep your head straight!';
         }
     } else {
         document.getElementById('subtitle_4').innerHTML = 'Stopped';
