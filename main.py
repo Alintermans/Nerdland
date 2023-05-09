@@ -19,16 +19,22 @@ import usb.core
 import usb.util
 import copy 
 import RPi.GPIO as GPIO
+import time
 
 
 ################################# Settings #############################################
 sample_period = 0.001
 send_period = 0.200
 error_send_period = 2
-avg_sample_size = 20
+avg_sample_size = 30
 max_len = 200
 number_of_endpoints = 4
 number_of_samples_between_calibration_checks = 20
+
+amount_of_time_to_give_gas = 0.5 # how many seconds the car will give gas 
+
+time_between_giving_gas = 1 # the time between giving gas
+time_between_turns = 1.5 # the time between turning the car
 
 transform_value = 5/1023
 
@@ -52,10 +58,15 @@ states = [None, None, None, None] #States can be None 'LEFT', 'CENTER', 'RIGHT',
 values = [[], [], [], []]
 svg_values = [[], [], [], []]
 
+last_time_since_gas = [None, None, None, None]
+last_time_since_turn = [None, None, None, None]
+
+giving_gas = [False, False, False, False]
+
 #Error message
 error_message = ""
 
-gpio_pins = [[19,26], [13,6], [21,20], [16,12]] # The left is mapped to the left button and right is mapped to the right button for the corresponding controller
+gpio_pins = [[19,26,13], [6,5,12], [21,20,16], [22,27,17]] # The left is mapped to the left button and right is mapped to the right button for the corresponding controller
 
 app = Flask(__name__)      
 
@@ -103,7 +114,6 @@ def sample_data():
                     if len(values[i]) == max_len:
                         values[i].pop(0)
                     
-                    
                     values[i].append(averaged_value)
                     temp_values[i] = []
 
@@ -124,6 +134,7 @@ def sample_data():
                             number_added_samples_after_calibration[i] += 1
                         elif number_added_samples_after_calibration[i] == number_of_svg_points:
                             svg_values[i] = copy.deepcopy(values[i][-number_of_svg_points:])
+                        
                         control_car(i, averaged_value)
             # Sleep before taking the next sample
             time.sleep(sample_period)
@@ -199,43 +210,80 @@ def connectToUSB():
 ################################# Functions - Controlling the cars #############################################
 def setup_gpio_pins():
     GPIO.setmode(GPIO.BCM) 
-    for left, right in gpio_pins:
-        print(left)
-        print(right)
+    for left, right, up in gpio_pins:
         GPIO.setup(left, GPIO.OUT)
         GPIO.setup(right, GPIO.OUT)
+        GPIO.setup(up, GPIO.OUT)
         GPIO.output(left, GPIO.LOW)
         GPIO.output(right, GPIO.LOW)
+        GPIO.output(up, GPIO.LOW)
     
 
 def control_car(index, new_value):
-    global states
 
-    #States can only be RIGHT, LEFT or CENTER if the state is None or CALIBRATING, this function shouldn't be called. 
-    if new_value >= value_min_right:
-        if states[index] != 'RIGHT':
-            states[index] = 'RIGHT'
-            gpio_pin = gpio_pins[index][1]
-            # Set the GPIO PIN TO HIGH
-            GPIO.output(gpio_pin, GPIO.HIGH)
-    elif new_value <= value_max_left:
-        if states[index] != 'LEFT':
-            states[index] = 'LEFT'
-            gpio_pin = gpio_pins[index][0]
-            # Set the GPIO PIN TO HIGH
-            GPIO.output(gpio_pin, GPIO.HIGH)
-    elif states[index] != 'CALIBRATING' and states[index] is not None:
-        previous_state = states[index]
-        states[index] = 'CENTER'
+    give_gas(index)
 
-        if previous_state == 'LEFT':
-            gpio_pin = gpio_pins[index][0]
-            # Set the GPIO PIN TO LOW
+    current_time = time.time()
+
+    if current_time - last_time_since_turn[index] > time_between_turns:
+        global states
+        global last_time_since_turn
+
+        last_time_since_turn[index] = current_time
+
+        #States can only be RIGHT, LEFT or CENTER if the state is None or CALIBRATING, this function shouldn't be called. 
+        if new_value >= value_min_right:
+            if states[index] != 'RIGHT':
+                if states[index] == 'LEFT':
+                    gpio_pin = gpio_pins[index][0]
+                    # Set the GPIO PIN TO LOW
+                    GPIO.output(gpio_pin, GPIO.LOW)
+
+                states[index] = 'RIGHT'
+                gpio_pin = gpio_pins[index][1]
+                # Set the GPIO PIN TO HIGH
+                GPIO.output(gpio_pin, GPIO.HIGH)
+        elif new_value <= value_max_left:
+            if states[index] != 'LEFT':
+                if states[index] == 'RIGHT':
+                    gpio_pin = gpio_pins[index][1]
+                    # Set the GPIO PIN TO LOW
+                    GPIO.output(gpio_pin, GPIO.LOW)
+
+                states[index] = 'LEFT'
+                gpio_pin = gpio_pins[index][0]
+                # Set the GPIO PIN TO HIGH
+                GPIO.output(gpio_pin, GPIO.HIGH)
+        elif states[index] != 'CALIBRATING' and states[index] is not None:
+            previous_state = states[index]
+            states[index] = 'CENTER'
+
+            if previous_state == 'LEFT':
+                gpio_pin = gpio_pins[index][0]
+                # Set the GPIO PIN TO LOW
+                GPIO.output(gpio_pin, GPIO.LOW)
+            elif previous_state == 'RIGHT':
+                gpio_pin = gpio_pins[index][1]
+                # Set the GPIO PIN TO LOW
+                GPIO.output(gpio_pin, GPIO.LOW)
+
+def give_gas(index):
+    global last_time_since_gas
+    global giving_gas
+
+    current_time = time.time()
+
+    if giving_gas[index]:
+        if current_time -  last_time_since_gas[index] > amount_of_time_to_give_gas:
+            giving_gas[index] = False
+            gpio_pin = gpio_pins[index][2]
             GPIO.output(gpio_pin, GPIO.LOW)
-        elif previous_state == 'RIGHT':
-            gpio_pin = gpio_pins[index][1]
-            # Set the GPIO PIN TO LOW
-            GPIO.output(gpio_pin, GPIO.LOW)
+    else:
+        if current_time -  last_time_since_gas[index] > time_between_giving_gas or last_time_since_gas[index] == None:
+            giving_gas[index] = True
+            gpio_pin = gpio_pins[index][2]
+            GPIO.output(gpio_pin, GPIO.HIGH)
+
 
 ################################# Functions - Flask Server #############################################
 
