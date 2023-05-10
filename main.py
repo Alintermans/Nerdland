@@ -26,24 +26,31 @@ import time
 sample_period = 0.001
 send_period = 0.200
 error_send_period = 2
-avg_sample_size = 30
+avg_sample_size = 20
 max_len = 200
 number_of_endpoints = 4
+
 number_of_samples_between_calibration_checks = 20
 
-amount_of_time_to_give_gas = 0.5 # how many seconds the car will give gas 
+number_of_samples_between_signal_average = 30
+number_of_samples_to_average_over = 200
+average_rate=0.4
+
+amount_of_time_to_give_gas = 0.3 # how many seconds the car will give gas 
 
 time_between_giving_gas = 1 # the time between giving gas
-time_between_turns = 1.5 # the time between turning the car
+time_between_turns = 1 # the time between turning the car
 
 transform_value = 5/1023
 
 number_of_svg_points = 50
 
-value_max_left = 2.2
-value_min_right = 2.8
 
-calibration_min = 2.3
+
+value_max_left = -0.2
+value_min_right = 0.2
+
+calibration_min = 2.1
 calibration_max = 2.7
 
 
@@ -58,6 +65,8 @@ states = [None, None, None, None] #States can be None 'LEFT', 'CENTER', 'RIGHT',
 values = [[], [], [], []]
 svg_values = [[], [], [], []]
 
+current_average = [2.5, 2.5, 2.5, 2.5]
+
 last_time_since_gas = [None, None, None, None]
 last_time_since_turn = [None, None, None, None]
 
@@ -66,7 +75,7 @@ giving_gas = [False, False, False, False]
 #Error message
 error_message = ""
 
-gpio_pins = [[19,26,13], [6,5,12], [21,20,16], [22,27,17]] # The left is mapped to the left button and right is mapped to the right button for the corresponding controller
+gpio_pins = [[26,19,13], [6,5,12], [21,20,16], [22,27,17]] # The left is mapped to the left button and right is mapped to the right button for the corresponding controller
 
 app = Flask(__name__)      
 
@@ -79,6 +88,11 @@ def mean(array):
         result+= array[i]
     
     return result/len(array)
+
+def calculate_new_average(index):
+    global current_average
+    temp_values = values[index][-number_of_samples_to_average_over:]
+    current_average[index] = 2.5*(1 - average_rate) +  mean(temp_values)*average_rate
 
 
 # Thread function to sample data from devices
@@ -130,10 +144,13 @@ def sample_data():
                             number_added_samples_after_calibration_check[i] += 1
                         
                     else:
-                        if number_added_samples_after_calibration[i] < number_of_svg_points:
-                            number_added_samples_after_calibration[i] += 1
-                        elif number_added_samples_after_calibration[i] == number_of_svg_points:
+                        number_added_samples_after_calibration[i] += 1
+                        if number_added_samples_after_calibration[i] == number_of_svg_points:
                             svg_values[i] = copy.deepcopy(values[i][-number_of_svg_points:])
+
+                        if number_added_samples_after_calibration[i] % number_of_samples_between_signal_average == 0:
+                            calculate_new_average(i)
+                            number_added_samples_after_calibration[i] = 51
                         
                         control_car(i, averaged_value)
             # Sleep before taking the next sample
@@ -144,8 +161,7 @@ def checkIfCallibrated(index):
     
     mean = 0
     for i in temp_values:
-        print(i)
-        if i > value_min_right or i < value_max_left:
+        if i > (current_average[index]  + value_min_right) or i < (current_average[index] + value_max_left):
             return False
         mean += i
     
@@ -220,19 +236,20 @@ def setup_gpio_pins():
     
 
 def control_car(index, new_value):
+    global states
+    global last_time_since_turn
 
     give_gas(index)
 
     current_time = time.time()
 
-    if current_time - last_time_since_turn[index] > time_between_turns:
-        global states
-        global last_time_since_turn
+    if last_time_since_turn[index] is None or current_time - last_time_since_turn[index] > time_between_turns:
+        
 
         last_time_since_turn[index] = current_time
 
         #States can only be RIGHT, LEFT or CENTER if the state is None or CALIBRATING, this function shouldn't be called. 
-        if new_value >= value_min_right:
+        if new_value >= (value_min_right + current_average[index]):
             if states[index] != 'RIGHT':
                 if states[index] == 'LEFT':
                     gpio_pin = gpio_pins[index][0]
@@ -243,7 +260,7 @@ def control_car(index, new_value):
                 gpio_pin = gpio_pins[index][1]
                 # Set the GPIO PIN TO HIGH
                 GPIO.output(gpio_pin, GPIO.HIGH)
-        elif new_value <= value_max_left:
+        elif new_value <= (value_max_left + current_average[index]):
             if states[index] != 'LEFT':
                 if states[index] == 'RIGHT':
                     gpio_pin = gpio_pins[index][1]
@@ -274,12 +291,13 @@ def give_gas(index):
     current_time = time.time()
 
     if giving_gas[index]:
-        if current_time -  last_time_since_gas[index] > amount_of_time_to_give_gas:
+        if last_time_since_gas[index] is None or current_time -  last_time_since_gas[index] > amount_of_time_to_give_gas:
             giving_gas[index] = False
             gpio_pin = gpio_pins[index][2]
             GPIO.output(gpio_pin, GPIO.LOW)
+            last_time_since_gas[index] = current_time
     else:
-        if current_time -  last_time_since_gas[index] > time_between_giving_gas or last_time_since_gas[index] == None:
+        if last_time_since_gas[index] is None or current_time -  last_time_since_gas[index] > time_between_giving_gas:
             giving_gas[index] = True
             gpio_pin = gpio_pins[index][2]
             GPIO.output(gpio_pin, GPIO.HIGH)
@@ -344,10 +362,11 @@ def stop_button_pressed():
     states[button_index] = None
     values[button_index] = []
     svg_values[button_index] = []
-    left, right = gpio_pins[button_index]
+    left, right, up = gpio_pins[button_index]
     GPIO.output(left, GPIO.LOW)
     GPIO.output(right, GPIO.LOW)
-
+    GPIO.output(up, GPIO.LOW)
+    current_average[button_index] = 2.5
     return jsonify({'message': 'Stop Button pressed!', 'value': button_index})
 
 @app.route('/download_svg_pressed')
