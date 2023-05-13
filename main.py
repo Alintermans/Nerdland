@@ -28,7 +28,9 @@ send_period = 0.200
 error_send_period = 2
 avg_sample_size = 20
 max_len = 200
-number_of_endpoints = 4
+number_of__current_endpoints = 0
+
+number_of_expected_endpoints = 2
 
 number_of_samples_between_calibration_checks = 20
 
@@ -75,7 +77,7 @@ giving_gas = [False, False, False, False]
 #Error message
 error_message = ""
 
-gpio_pins = [[26,19,13], [6,5,12], [21,20,16], [22,27,17]] # The left is mapped to the left button and right is mapped to the right button for the corresponding controller
+gpio_pins = [[26,19,13],  [21,20,16], [6,5,12], [22,27,17]] # The left is mapped to the left button and right is mapped to the right button for the corresponding controller
 
 app = Flask(__name__)      
 
@@ -106,7 +108,7 @@ def sample_data():
     number_added_samples_after_calibration = [0,0,0,0]
     current_data_point = 0
     while True:
-        for i in range(0, number_of_endpoints):
+        for i in range(0, number_of__current_endpoints):
             if states[i] is not None:
                 try: 
                     data = endpoints[i].read(64, 100)
@@ -178,7 +180,7 @@ def checkIfCallibrated(index):
 def connectToUSB():
     global endpoints
     global error_message
-    global number_of_endpoints
+    global number_of__current_endpoints
     vendor_id = 0x2572
     product_id = 0xA001
 
@@ -190,7 +192,7 @@ def connectToUSB():
         return
 
     i=0
-    number_of_endpoints = 0
+    number_of__current_endpoints = 0
 
     for d in dev:
         if d.is_kernel_driver_active(0):
@@ -214,11 +216,11 @@ def connectToUSB():
             endpoints[i] = endpoint
             print("Connected to endpoint", i)
             i += 1
-            number_of_endpoints += 1
+            number_of__current_endpoints += 1
 
-    if number_of_endpoints != 4:
-        print("Error: only " + str(number_of_endpoints) + " out of 4 usb's are connected!")
-        error_message = "Error: only " + str(number_of_endpoints) + " out of 4 usb's are connected!"
+    if number_of__current_endpoints != number_of_expected_endpoints:
+        print("Error: only " + str(number_of__current_endpoints) + " out of "+str(number_of_expected_endpoints)+" usb's are connected!")
+        error_message = "Error: only " + str(number_of__current_endpoints) + " out of "+str(number_of_expected_endpoints)+" usb's are connected!"
     else:
         error_message = ""
 
@@ -351,29 +353,34 @@ def error_stream():
 def start_button_pressed():
     global error_message
     button_index = int(request.args.get('value'))
-    states[button_index] = 'CALIBRATING'
 
-    return jsonify({'message': 'Start Button pressed!', 'value': button_index})
+    if button_index < number_of_expected_endpoints:
+        states[button_index] = 'CALIBRATING'
+        svg_values[button_index] = []
+        return jsonify({'message': 'Start Button pressed!', 'value': button_index})
 
 @app.route('/stop_button_pressed')
 def stop_button_pressed():
     global error_message
     button_index = int(request.args.get('value'))
-    states[button_index] = None
-    values[button_index] = []
-    svg_values[button_index] = []
-    left, right, up = gpio_pins[button_index]
-    GPIO.output(left, GPIO.LOW)
-    GPIO.output(right, GPIO.LOW)
-    GPIO.output(up, GPIO.LOW)
-    current_average[button_index] = 2.5
-    return jsonify({'message': 'Stop Button pressed!', 'value': button_index})
+    
+    if button_index < number_of_expected_endpoints:
+
+        states[button_index] = None
+        values[button_index] = []
+        
+        left, right, up = gpio_pins[button_index]
+        GPIO.output(left, GPIO.LOW)
+        GPIO.output(right, GPIO.LOW)
+        GPIO.output(up, GPIO.LOW)
+        current_average[button_index] = 2.5
+        return jsonify({'message': 'Stop Button pressed!', 'value': button_index})
 
 @app.route('/download_svg_pressed')
 def download_svg_pressed():
     button_index = int(request.args.get('value'))
-
-    return jsonify({'message': 'Download SVG Button pressed!', 'value': svg_values[button_index]})
+    if button_index < number_of_expected_endpoints:
+        return jsonify({'message': 'Download SVG Button pressed!', 'value': svg_values[button_index]})
 
 @app.route('/reset_usb_button_pressed')
 def reset_usb_button_pressed():
