@@ -26,7 +26,7 @@ import time
 sample_period = 0.001
 send_period = 0.200
 error_send_period = 2
-avg_sample_size = 20
+avg_sample_size = 30
 max_len = 200
 number_of__current_endpoints = 0
 
@@ -36,7 +36,7 @@ number_of_samples_between_calibration_checks = 20
 
 number_of_samples_between_signal_average = 30
 number_of_samples_to_average_over = 200
-average_rate=0.4
+average_rate=0.5
 
 amount_of_time_to_give_gas = 0.3 # how many seconds the car will give gas 
 
@@ -45,15 +45,15 @@ time_between_turns = 1 # the time between turning the car
 
 transform_value = 5/1023
 
-number_of_svg_points = 50
+number_of_svg_points = 150
 
 
 
-value_max_left = -0.2
-value_min_right = 0.2
+value_max_left = -0.25
+value_min_right = 0.25
 
-calibration_min = 2.1
-calibration_max = 2.7
+calibration_min_val = -0.4
+calibration_max_val = 0.2
 
 
 ################################# Global Variables #############################################
@@ -66,6 +66,7 @@ states = [None, None, None, None] #States can be None 'LEFT', 'CENTER', 'RIGHT',
 #Values
 values = [[], [], [], []]
 svg_values = [[], [], [], []]
+svg_recorded = [False, False, False, False]
 
 current_average = [2.5, 2.5, 2.5, 2.5]
 
@@ -135,6 +136,8 @@ def sample_data():
 
                     if states[i] == 'CALIBRATING':
                         if number_added_samples_after_calibration_check[i] >= number_of_samples_between_calibration_checks:
+                            if len(values[i]) >= number_of_samples_to_average_over:
+                                calculate_new_average(i)
                             if checkIfCallibrated(i):
                                 states[i] = 'CENTER'
                                 control_car(i, averaged_value)
@@ -147,12 +150,13 @@ def sample_data():
                         
                     else:
                         number_added_samples_after_calibration[i] += 1
-                        if number_added_samples_after_calibration[i] == number_of_svg_points:
+                        if not svg_recorded[i] and number_added_samples_after_calibration[i] == number_of_svg_points:
+                            svg_recorded[i] = True
                             svg_values[i] = copy.deepcopy(values[i][-number_of_svg_points:])
 
-                        if number_added_samples_after_calibration[i] % number_of_samples_between_signal_average == 0:
+                        if svg_recorded[i] and number_added_samples_after_calibration[i] % number_of_samples_between_signal_average == 0:
                             calculate_new_average(i)
-                            number_added_samples_after_calibration[i] = 51
+                            number_added_samples_after_calibration[i] = 0
                         
                         control_car(i, averaged_value)
             # Sleep before taking the next sample
@@ -169,7 +173,7 @@ def checkIfCallibrated(index):
     
     mean = mean/len(temp_values)
 
-    if mean < calibration_min or mean > calibration_max:
+    if mean < (current_average[index] + calibration_min_val) or mean > (current_average[index] + calibration_max_val):
         return False
     
     return True
@@ -357,6 +361,7 @@ def start_button_pressed():
     if button_index < number_of_expected_endpoints:
         states[button_index] = 'CALIBRATING'
         svg_values[button_index] = []
+        svg_recorded[button_index] = False
         return jsonify({'message': 'Start Button pressed!', 'value': button_index})
 
 @app.route('/stop_button_pressed')
