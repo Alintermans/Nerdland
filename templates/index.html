@@ -26,6 +26,17 @@
 				<button onclick="stop_button(0)" class="button button-stop"><i class="fas fa-stop"></i> Stop</button>
 				<button onclick="download_svg_button(0)" class="button button-download"><i class="fas fa-download"></i> Download SVG</button>
 			</div>
+			<div> 
+				<h4 style="padding: 0; margin:0; text-align: center" id="speed-text-1">Speed: Normal</h4>
+				
+				<input type="range" class="slider" min="0" max="3" value="1" list="steplist" onchange="speed_slider(0,this.value)">
+				<datalist id="steplist">
+					<option value="0">Stop 1</option>
+					<option value="1">Stop 2</option>
+					<option value="2">Stop 3</option>
+					<option value="3">Stop 4</option>
+				</datalist>
+			</div>
 		</div>
 		<div class="chart-container">
 			<h2>Car 2</h2>
@@ -35,6 +46,17 @@
 				<button onclick="start_button(1)" class="button button-start"><i class="fas fa-play"></i> Start</button>
 				<button onclick="stop_button(1)" class="button button-stop"><i class="fas fa-stop"></i> Stop</button>
 				<button onclick="download_svg_button(1)" class="button button-download"><i class="fas fa-download"></i> Download SVG</button>
+			</div>
+			<div> 
+				<h4 style="padding: 0; margin:0; text-align: center" id="speed-text-2">Speed: Normal</h4>
+				
+				<input type="range" class="slider" min="0" max="3" value="1" list="slider-stops-2" onchange="speed_slider(1,this.value)">
+				<datalist id="slider-stops-2">
+					<option value="0">Stop 1</option>
+					<option value="1">Stop 2</option>
+					<option value="2">Stop 3</option>
+					<option value="3">Stop 4</option>
+				</datalist>
 			</div>
 		</div>
 		<div class="chart-container">

@@ -40,7 +40,7 @@ average_rate=0.5
 
 amount_of_time_to_give_gas = 0.3 # how many seconds the car will give gas 
 
-time_between_giving_gas = 1 # the time between giving gas
+time_between_giving_gas = [1,1,1,1] # the time between giving gas
 time_between_turns = 1 # the time between turning the car
 
 transform_value = 5/1023
@@ -303,7 +303,7 @@ def give_gas(index):
             GPIO.output(gpio_pin, GPIO.LOW)
             last_time_since_gas[index] = current_time
     else:
-        if last_time_since_gas[index] is None or current_time -  last_time_since_gas[index] > time_between_giving_gas:
+        if last_time_since_gas[index] is None or current_time -  last_time_since_gas[index] > time_between_giving_gas[index]:
             giving_gas[index] = True
             gpio_pin = gpio_pins[index][2]
             GPIO.output(gpio_pin, GPIO.HIGH)
@@ -335,6 +335,8 @@ def stream():
                     'state_2': states[1],
                     'state_3': states[2],
                     'state_4': states[3],
+                    'gas_val_1': time_between_giving_gas[0],
+                    'gas_val_2': time_between_giving_gas[1]
                     }
             yield 'data: {}\n\n'.format(json.dumps(data)) 
             time.sleep(send_period)
@@ -396,10 +398,21 @@ def reset_usb_button_pressed():
 
     return jsonify({'message': 'Reset USB Button pressed!'})
 
+@app.route('/update_gas_amount')
+def update_gas_amount():
+    global time_between_giving_gas
+    index = int(request.args.get('index'))
+    val = float(request.args.get('value'))
+    time_between_giving_gas[index] = val
+
+    return jsonify({'message': 'Gas val updated!'})
+
+
 
 ################################# Main #############################################
 
 if __name__ == '__main__':
+    print("Starting...")
     # Setup GPIO pins
     GPIO.setwarnings(False)
     setup_gpio_pins()

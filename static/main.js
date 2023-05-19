@@ -176,6 +176,38 @@ function download_svg_button(val) {
     .then(data => generate_and_download_svg_file(data.value));
 }
 
+
+function speed_slider(index, slider_val) {
+    var id = "speed-text-" + (index + 1).toString();
+    var new_text = "Speed: Normal"
+    var value_to_send = 1.0
+
+
+    
+    if (slider_val == 0) {
+        new_text = "Speed: Slow";
+        value_to_send = 2.0;
+    }  else if (slider_val == 1) {
+        new_text = "Speed: Normal";
+        value_to_send = 1.0;
+    } else if (slider_val == 2) {
+        new_text = "Speed: Fast";
+        value_to_send = 0.6;
+    } else if (slider_val == 3) {
+        new_text = "Speed: Very Fast";
+        value_to_send = 0.3;
+    }
+
+    
+
+    var speed_text = document.getElementById(id);
+    speed_text.innerHTML = new_text 
+
+    fetch(`/update_gas_amount?value=${value_to_send}&index=${index}`)
+    .then(response => response.json())
+    .then(data => console.log(data));
+}
+
 //------------------------------------------- SVG Generator Helper Function -------------------------------------------//
 
 function generate_and_download_svg_file(data) {
