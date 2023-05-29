@@ -65,6 +65,10 @@ margin-right: 5px;
 background-color: #28a745;
 }
 
+.button-overwrite {
+    background-color: #aeb6b0;
+    }
+
 .button-stop {
 background-color: #dc3545;
 }

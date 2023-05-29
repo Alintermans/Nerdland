@@ -73,6 +73,9 @@ current_average = [2.5, 2.5, 2.5, 2.5]
 last_time_since_gas = [None, None, None, None]
 last_time_since_turn = [None, None, None, None]
 
+number_added_samples_after_calibration_check = [0,0,0,0]
+number_added_samples_after_calibration = [0,0,0,0]
+
 giving_gas = [False, False, False, False]
 
 #Error message
@@ -105,8 +108,8 @@ def sample_data():
     global values
     global error_message
     temp_values = [[], [], [], []] #unaveraged data flow
-    number_added_samples_after_calibration_check = [0,0,0,0]
-    number_added_samples_after_calibration = [0,0,0,0]
+    global number_added_samples_after_calibration_check
+    global number_added_samples_after_calibration
     current_data_point = 0
     while True:
         for i in range(0, number_of__current_endpoints):
@@ -398,14 +401,28 @@ def reset_usb_button_pressed():
 
     return jsonify({'message': 'Reset USB Button pressed!'})
 
+
 @app.route('/update_gas_amount')
 def update_gas_amount():
     global time_between_giving_gas
+    
     index = int(request.args.get('index'))
     val = float(request.args.get('value'))
     time_between_giving_gas[index] = val
 
     return jsonify({'message': 'Gas val updated!'})
+
+@app.route('/overwrite_calibration_values')
+def overwrite_calibration_values():
+    global states
+    global number_added_samples_after_calibration
+    global number_added_samples_after_calibration_check
+    index = int(request.args.get('index'))
+    if states[index] == 'CALIBRATING':
+        states[index] = 'CENTER'
+        number_added_samples_after_calibration[index] = 0
+        number_added_samples_after_calibration_check[index] = 0
+    return jsonify({'message': 'Calibration values overwritrten!'})
 
 
 

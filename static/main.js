@@ -170,6 +170,12 @@ function stop_button(val) {
     .then(data => console.log(data));
 }
 
+function overwrite_calibration_values(val) {
+    fetch(`/overwrite_calibration_values?index=${val}`)
+    .then(response => response.json())
+    .then(data => console.log(data));
+}
+
 function download_svg_button(val) {
     fetch(`/download_svg_pressed?value=${val}`)
     .then(response => response.json())
